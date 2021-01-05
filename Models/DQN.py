@@ -3,19 +3,20 @@ import os, random
 import numpy as np
 
 import tensorflow as tf
+from tensorflow.keras import Model
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, Input, Conv1D, Dropout
 from tensorflow.keras.optimizers import Adam
 
 class DQSN:
-    def __init__(self, epsilon, gamma, epsilon_min, lr, epsilon_decay, action_space, state_space, batch_size = 64, copy_interval = 1, sarsa = False):
+    def __init__(self, epsilon, gamma, epsilon_min, lr, epsilon_decay, action_space, state_space, batch_size = 64, copy_interval = 1, sarsa = False, memory = 5000):
         self.epsilon = epsilon
         self.gamma = gamma
         self.batch_size = batch_size
         self.epsilon_min = epsilon_min
         self.lr = lr
         self.epsilon_decay = epsilon_decay
-        self.memory = deque(maxlen=50000)
+        self.memory = deque(maxlen=memory)
         self.copy_interval = copy_interval
         self.fit_counter = 0
         self.action_space = action_space
@@ -29,12 +30,34 @@ class DQSN:
             self.model_path = f'./Models/dqn.h5'
 
     def build_model(self):
-        model = Sequential()
-        model.add(Dense(24, input_dim=self.state_space, activation='relu'))
-        model.add(Dense(24, activation='relu'))
-        model.add(Dense(self.action_space, activation='linear'))
-        model.compile(loss='mse', optimizer=Adam(lr=self.lr))
-        return model
+        _input = Input(shape = (60,2,))
+        
+        # Deconv segment, 1D convolution on 50 timesteps
+        x = Conv1D(120, 2, activation='relu', padding='causal')(_input)
+        x = Conv1D(80, 2, activation='relu', padding='causal')(x)
+        x = Conv1D(60, 2, activation='relu', padding='causal')(x)
+        x = Conv1D(40, 2, activation='relu', padding='causal')(x)
+
+        # FF part
+        x = Dense(120, activation="relu")(x)
+        x = Dropout(0.5)(x)
+        x = Dense(120, activation="relu")(x)
+        x = Dropout(0.25)(x)
+        x = Dense(self.action_space, activation="softmax")(x)
+
+        _model = Model(_input, x)
+        _model.compile(loss="mse", optimizer=Adam(lr=self.epsilon))
+        print(_model.summary())
+        return _model
+    
+        # model = Sequential()
+        # model.add(Input(shape=self.state_space))
+        # model.add(Dense(24, activation='relu'))
+        # model.add(Dense(24, activation='relu'))
+        # model.add(Dense(units=self.action_space, activation='linear'))
+        # model.compile(loss='mse', optimizer=Adam(lr=self.lr))
+        # print(model.summary())
+        # return model
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
@@ -42,6 +65,8 @@ class DQSN:
     def act(self, state):
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.action_space)
+        print(state)
+        print(state.shape) #shape 1,120 van maken
         act_values = self.target_model.predict(state)
         return np.argmax(act_values[0])
 
@@ -62,7 +87,21 @@ class DQSN:
         if self.sarsa:
             targets = rewards + self.gamma * (self.model.predict_on_batch(next_states).shape[0]) * (1-dones)
         else:
-            targets = rewards + self.gamma * (np.amax(self.target_model.predict_on_batch(next_states), axis=1))*(1-dones)
+            print(rewards)
+            print(rewards.shape)
+            print(self.gamma)
+            print(rewards+self.gamma)
+            print(dones.shape)
+            print(next_states.shape)
+            test = self.target_model.predict_on_batch(next_states)
+            print(test.shape)
+            # print(np.argmax(np.matrix(test), axis=2))
+            print(np.amax(self.target_model.predict_on_batch(next_states), axis=1).shape)
+            targets = rewards + self.gamma * (
+                np.argmax(np.amax(
+                    self.target_model.predict_on_batch(
+                        next_states), axis=1), axis=1))*(
+                            1-dones)
         targets_full = self.model.predict_on_batch(states)
 
         ind = np.array([i for i in range(self.batch_size)])
