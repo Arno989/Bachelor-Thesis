@@ -8,6 +8,7 @@ import tensorflow as tf
 
 from Models.DQN import DQSN
 from Models.PG import PG
+from Models.AC import AC
 
 from tensorflow.python.framework.ops import disable_eager_execution
 disable_eager_execution()
@@ -39,7 +40,7 @@ print(f"Actions: {env.action_space.n}, Observation space: {env.observation_space
 
 ### Agent training functions --------------------------------------------------------------------------------------------
 
-def train_dqsn(episodes, sarsa, render):
+def train_dqsn(episodes, sarsa):
     rewardlist = []
     agent = DQSN(epsilon, gamma, epsilon_min, learning_rate, epsilon_decay, action_space=env.action_space.n, state_space=env.observation_space.shape[0], sarsa=sarsa)
     
@@ -51,8 +52,6 @@ def train_dqsn(episodes, sarsa, render):
         
         while not done:
             action = agent.act(state)
-            if render:
-                env.render()
             next_state, reward, done, _ = env.step(action)
             next_state = np.asarray([i[1] for i in next_state])
                         
@@ -69,7 +68,7 @@ def train_dqsn(episodes, sarsa, render):
     return rewardlist
 
 
-def train_pg(episodes, render):
+def train_pg(episodes):
     rewards = []
     cum_rewards = []
     
@@ -101,6 +100,30 @@ def train_pg(episodes, render):
     return rewards, cum_rewards
 
 
+def train_ac(episodes):
+    agent = AC(alpha, beta, action_space= env.action_space.n, state_space=(60,1))
+
+    score_history = []
+
+    for i in range(episodes):
+        done = False
+        score = 0
+        state = np.asarray([i[1] for i in env.reset()])
+        
+        while not done:
+            action = agent.choose_action(state)
+            next_state, reward, done, _ = env.step(action)
+            next_state = np.asarray([i[1] for i in next_state])
+            agent.learn(state, action, reward, next_state, done)
+            state = next_state
+            
+            score += reward
+
+        score_history.append(score)
+        avg_score = np.mean(score_history[-100:])
+    
+    env.render_all()
+
 # %%
 if __name__ == '__main__':
     gamma = .95
@@ -109,10 +132,9 @@ if __name__ == '__main__':
     epsilon_min = 0.01
     epsilon_decay = .995
     SARSA = False
-    render = False
     
     try:
-        rewardlist = train_dqsn(10, SARSA, render)
+        rewardlist = train_dqsn(5, SARSA)
     except KeyboardInterrupt as e:
         env.close()
 
@@ -121,13 +143,20 @@ if __name__ == '__main__':
     gamma = .90
     lr_ml = 0.01
     lr_dl = 0.01
-    render = False
-    render_interval = 1
     
     try:
-        rewards, cum_rewards = train_pg(5, render)
+        train_pg(5)
     except KeyboardInterrupt as e:
         env.close()
 
 
+# %%
+if __name__ == '__main__':
+    alpha = 0.00001
+    beta = 0.00005
+    
+    try:
+        rewards, cum_rewards = train_ac(5)
+    except KeyboardInterrupt as e:
+        env.close()
 # %%
