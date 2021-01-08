@@ -28,8 +28,8 @@ class DQSN:
 
     def build_model(self):
         model = Sequential()
-        model.add(Dense(24, input_dim=self.state_space, activation='relu'))
-        model.add(Dense(24, activation='relu'))
+        model.add(Dense(30, input_dim=self.state_space, activation='relu'))
+        model.add(Dense(30, activation='relu'))
         model.add(Dense(self.action_space, activation='linear'))
         model.compile(loss='mse', optimizer=Adam(lr=self.lr))
         return model

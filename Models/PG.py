@@ -24,11 +24,11 @@ class PG:
         
         
     def build_policy_network(self):
-        _input = Input(shape=self.state_space[0])
+        _input = Input(shape=self.state_space)
         _ = Dropout(0.3)(_input)
-        _ = Dense(20, activation="relu")(_)
+        _ = Dense(30, activation="relu")(_)
         _ = Dropout(0.3)(_)
-        _ = Dense(20, activation="relu")(_)
+        _ = Dense(30, activation="relu")(_)
         _ = Dense(self.action_space, activation="softmax")(_)
         
         _model = Model(_input, _)
