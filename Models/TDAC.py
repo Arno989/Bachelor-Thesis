@@ -4,8 +4,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras import Model
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Input, Conv1D, Dropout
+from tensorflow.keras.models import load_model
+from tensorflow.keras.layers import Dense, Input
 from tensorflow.keras.optimizers import Adam
 
 
@@ -22,7 +22,7 @@ class TDAC:
 
     def build_actor_critic_network(self):
         # shared base network
-        NN_input = Input(shape=(self.state_space[0],))
+        NN_input = Input(shape=(self.state_space,))
         delta = Input(shape=[1])
         dense1 = Dense(30, activation='relu')(NN_input)
         dense2 = Dense(30, activation='relu')(dense1)
@@ -31,11 +31,19 @@ class TDAC:
         values = Dense(1, activation='linear')(dense2)
 
         # actor loss function
-        def custom_loss(y_true, y_pred):
-            out = K.clip(y_pred, 1e-8, 1-1e-8)
-            log_lik = y_true*K.log(out)
+        # def custom_loss(y_true, y_pred):
+        #     out = K.clip(y_pred, 1e-8, 1-1e-8)
+        #     log_lik = y_true * K.log(out)
 
-            return K.sum(-log_lik*delta)
+        #     return K.sum(-log_lik * delta)
+        
+        def custom_loss(y_true, y_pred):
+            action_true = y_true[:, :self.n_actions]
+            advantage = y_true[:, self.n_actions:]
+
+            return -tf.math.log(y_pred.prob(action_true) + 1e-5) * advantage
+            # import tf.compat.v1 as tfc
+            return -tfc.log(y_pred.prob(action_true) + 1e-5) * advantage
 
         # compose networks
         actor = Model(inputs=[NN_input, delta], outputs=[probs])
@@ -75,3 +83,14 @@ class TDAC:
         #update networks
         self.actor.fit([state, delta], actions, verbose=0)
         self.critic.fit(state, target, verbose=0) 
+        
+    def save_model(self):
+        self.actor.save("./Models/.h5/TDAC-actor.h5")
+        self.critic.save("./Models/.h5/TDAC-critic.h5")
+        self.policy.save("./Models/.h5/TDAC-policy.h5")
+
+    def load_model(self):
+        if os.path.isfile("./Models/.h5/TDAC-actor.h5"):
+            self.actor = load_model("./Models/.h5/TDAC-actor.h5")
+            self.critic = load_model("./Models/.h5/TDAC-critic.h5")
+            self.policy = load_model("./Models/.h5/TDAC-policy.h5")

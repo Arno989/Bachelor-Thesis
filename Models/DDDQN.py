@@ -1,10 +1,65 @@
+import os
+
 import tensorflow as tf 
 import numpy as np 
-import gym
 from tensorflow.keras.models import load_model
 
 
+# Network Class ---------------------------------------------------------------------------------------------
+class DDDQN(tf.keras.Model):
+    def __init__(self, action_space):
+        super(DDDQN, self).__init__()
+        self.d1 = tf.keras.layers.Dense(128, activation='relu')
+        self.d2 = tf.keras.layers.Dense(128, activation='relu')
+        self.v = tf.keras.layers.Dense(1, activation=None)
+        self.a = tf.keras.layers.Dense(action_space, activation=None)
+
+    def call(self, input_data):
+        x = self.d1(input_data)
+        x = self.d2(x)
+        v = self.v(x)
+        a = self.a(x)
+        Q = v +(a -tf.math.reduce_mean(a, axis=1, keepdims=True))
+        return Q
+
+    def advantage(self, state):
+        x = self.d1(state)
+        x = self.d2(x)
+        a = self.a(x)
+        return a
     
+    
+# Memory Class -------------------------------------------------------------------------------------------------
+class exp_replay():
+    def __init__(self, state_space, buffer_size= 1000000):
+        self.buffer_size = buffer_size
+        self.state_mem = np.zeros((self.buffer_size, state_space), dtype=np.float32)
+        self.action_mem = np.zeros((self.buffer_size), dtype=np.int32)
+        self.reward_mem = np.zeros((self.buffer_size), dtype=np.float32)
+        self.next_state_mem = np.zeros((self.buffer_size, state_space), dtype=np.float32)
+        self.done_mem = np.zeros((self.buffer_size), dtype=np.bool)
+        self.pointer = 0
+
+    def add_exp(self, state, action, reward, next_state, done):
+        idx  = self.pointer % self.buffer_size 
+        self.state_mem[idx] = state
+        self.action_mem[idx] = action
+        self.reward_mem[idx] = reward
+        self.next_state_mem[idx] = next_state
+        self.done_mem[idx] = 1 - int(done)
+        self.pointer += 1
+
+    def sample_exp(self, batch_size= 64):
+        max_mem = min(self.pointer, self.buffer_size)
+        batch = np.random.choice(max_mem, batch_size, replace=False)
+        states = self.state_mem[batch]
+        actions = self.action_mem[batch]
+        rewards = self.reward_mem[batch]
+        next_states = self.next_state_mem[batch]
+        dones = self.done_mem[batch]
+        return states, actions, rewards, next_states, dones
+
+
 class Agent():
     def __init__(self, action_space, state_space, gamma=0.99, replace=100, lr=0.001):
         self.gamma = gamma
@@ -23,13 +78,14 @@ class Agent():
         self.action_space = action_space
         self.state_space = state_space
 
-    # Agent Methods --------------------------------------------------------------------------------------------
+
     def act(self, state):
         if np.random.rand() <= self.epsilon:
             return np.random.choice([i for i in range(self.action_space)])
 
         else:
-            actions = self.q_net.advantage(np.array([state]))
+            actions = self.q_net.advantage((np.array([state])))
+            print(actions)
             action = np.argmax(actions)
             return action
 
@@ -62,102 +118,10 @@ class Agent():
 
 
     def save_model(self):
-        self.q_net.save("model.h5")
-        self.target_net.save("target_model.h5")
+        self.q_net.save("./Models/.h5/DDDQN-Q_net.h5")
+        self.target_net.save("./.h5/DDDQN-target.h5")
 
     def load_model(self):
-        self.q_net = load_model("model.h5")
-        self.target_net = load_model("model.h5")
-
-
-# Network Class ---------------------------------------------------------------------------------------------
-class DDDQN(tf.keras.Model):
-    def __init__(self, action_space):
-        super(DDDQN, self).__init__()
-        self.d1 = tf.keras.layers.Dense(128, activation='relu')
-        self.d2 = tf.keras.layers.Dense(128, activation='relu')
-        self.v = tf.keras.layers.Dense(1, activation=None)
-        self.a = tf.keras.layers.Dense(action_space, activation=None)
-
-    def call(self, input_data):
-        x = self.d1(input_data)
-        x = self.d2(x)
-        v = self.v(x)
-        a = self.a(x)
-        Q = v +(a -tf.math.reduce_mean(a, axis=1, keepdims=True))
-        return Q
-
-    def advantage(self, state):
-        x = self.d1(state)
-        x = self.d2(x)
-        a = self.a(x)
-        return a
-    
-    
-    # Memory Class -------------------------------------------------------------------------------------------------
-class exp_replay():
-    def __init__(self, state_space, buffer_size= 1000000):
-        self.buffer_size = buffer_size
-        self.state_mem = np.zeros((self.buffer_size, state_space), dtype=np.float32)
-        self.action_mem = np.zeros((self.buffer_size), dtype=np.int32)
-        self.reward_mem = np.zeros((self.buffer_size), dtype=np.float32)
-        self.next_state_mem = np.zeros((self.buffer_size, state_space), dtype=np.float32)
-        self.done_mem = np.zeros((self.buffer_size), dtype=np.bool)
-        self.pointer = 0
-
-    def add_exp(self, state, action, reward, next_state, done):
-        idx  = self.pointer % self.buffer_size 
-        self.state_mem[idx] = state
-        self.action_mem[idx] = action
-        self.reward_mem[idx] = reward
-        self.next_state_mem[idx] = next_state
-        self.done_mem[idx] = 1 - int(done)
-        self.pointer += 1
-
-    def sample_exp(self, batch_size= 64):
-        max_mem = min(self.pointer, self.buffer_size)
-        batch = np.random.choice(max_mem, batch_size, replace=False)
-        states = self.state_mem[batch]
-        actions = self.action_mem[batch]
-        rewards = self.reward_mem[batch]
-        next_states = self.next_state_mem[batch]
-        dones = self.done_mem[batch]
-        return states, actions, rewards, next_states, dones
-
-
-          
-
-# env = gym.make('LunarLander-v2')
-          
-# def train_dddqn(episodes):
-#     gamma = .99
-#     replace = 100
-#     lr = 0.001
-    
-#     ep_history = []
-#     agent = Agent(action_space=env.action_space.n, state_space=env.observation_space.shape)
-
-#     for e in range(episodes):
-#         state = env.reset()
-#         done = False
-#         # score = [0,0]
-        
-#         while not done:
-#             env.render()
-#             action = agent.act(state)
-#             next_state, reward, done, info = env.step(action)
-#             # next_state = np.asarray([i[1] for i in next_state])
-            
-#             agent.update_mem(state, action, reward, next_state, done)
-#             agent.train()
-#             state = next_state
-            
-#             # score = [score[0] + reward, info["total_profit"]]
-
-#         # ep_history.append(score)
-    
-#     # env.render_all()
-#     return 1
-#     return ep_history
-
-# _ = train_dddqn(1)
+        if os.path.isfile("./Models/.h5/DDDQN-Q_net.h5"):
+            self.q_net = load_model("./Models/.h5/DDDQN-Q_net.h5")
+            self.target_net = load_model("./Models/.h5/DDDQN-target.h5")

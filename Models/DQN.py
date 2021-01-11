@@ -3,9 +3,9 @@ import os, random
 import numpy as np
 
 import tensorflow as tf
-from tensorflow.keras import Model
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Input, Conv1D, Dropout
+from tensorflow.keras.models import load_model
+from tensorflow.keras.layers import Dense
 from tensorflow.keras.optimizers import Adam
 
 
@@ -95,6 +95,14 @@ class DQSN:
         if self.fit_counter % self.copy_interval == 0:
             self.target_model.set_weights(self.model.get_weights())
             # print("  Target network updated")
+            
+    def save_model(self):
+        self.model.save("./Models/.h5/DQN.h5")
+
+    def load_model(self):
+        if os.path.isfile("./Models/.h5/DQN.h5"):
+            self.model = load_model("./Models/.h5/DQN.h5")
+            self.target_model.set_weights(self.model.get_weights())
 
 
 

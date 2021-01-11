@@ -1,8 +1,9 @@
+import os
 import numpy as np
 
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.layers import Dense, Dropout, Input
 
 
@@ -101,3 +102,11 @@ class PG:
         self.states, self.probs, self.gradients, self.rewards = [], [], [], []
 
         return history
+    
+    
+    def save_model(self):
+        self.model.save("./Models/.h5/PG.h5")
+
+    def load_model(self):
+        if os.path.isfile("./Models/.h5/PG.h5"):
+            self.model = load_model("./Models/.h5/PG.h5")
