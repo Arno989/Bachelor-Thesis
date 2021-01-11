@@ -14,13 +14,13 @@ from Models.DDDQN import Agent
 
 
 try:
-    tf.python.framework.ops.disable_eager_execution()
+    tf.compat.v1.disable_eager_execution()
     tf.config.experimental.set_memory_growth(tf.config.list_physical_devices('GPU')[0], True)
     print("GPU Configured")
-except:
-    print("No GPU's detected")
+except Exception as e:
+    print("No GPU's detected\n",e)
 
-
+figsize = (100,10)
 
 ### Environment setup -------------------------------------------------------------------------------------------------
 
@@ -66,7 +66,9 @@ def train_random(episodes):
                         
         ep_history.append(score)
         
+    plt.figure(figsize=figsize)
     env.render_all()
+    plt.show()
     return ep_history
 
 
@@ -79,6 +81,7 @@ def train_dqsn(episodes, sarsa):
     
     ep_history = [] # reward, profit
     agent = DQSN(epsilon, gamma, epsilon_min, learning_rate, epsilon_decay, action_space=env.action_space.n, state_space=env.observation_space.shape[0], sarsa=sarsa)
+    agent.load_model()
     
     for e in range(episodes):
         state = np.asarray([i[1] for i in env.reset()])
@@ -98,8 +101,11 @@ def train_dqsn(episodes, sarsa):
             
                         
         ep_history.append(score)
+        agent.save_model()
         
+    plt.figure(figsize=figsize)
     env.render_all()
+    plt.show()
     return ep_history
 
 
@@ -129,8 +135,11 @@ def train_pg(episodes):
             score = [score[0] + reward, info["total_profit"]]
                         
         ep_history.append(score)
+        agent.save_model()
          
+    plt.figure(figsize=figsize)
     env.render_all()
+    plt.show()
     return ep_history
 
 
@@ -157,8 +166,11 @@ def train_ac(episodes):
             score = [score[0] + reward, info["total_profit"]]
 
         ep_history.append(score)
+        agent.save_model()
     
+    plt.figure(figsize=figsize)
     env.render_all()
+    plt.show()
     return ep_history
 
 
@@ -187,25 +199,38 @@ def train_dddqn(episodes):
             score = [score[0] + reward, info["total_profit"]]
 
         ep_history.append(score)
+        agent.save_model()
     
+    plt.figure(figsize=figsize)
     env.render_all()
+    plt.show()
     return ep_history
 
+"""
+    def save_model(self):
+        self.q_net.save("./.h5/DDDQN-Q_net.h5")
+        self.target_net.save("./.h5/DDDQN-target.h5")
+
+    def load_model(self):
+        if os.path.isfile("./.h5/DDDQN-Q_net.h5"):
+            self.q_net = load_model("./.h5/DDDQN-Q_net.h5")
+            self.target_net = load_model("./.h5/DDDQN-target.h5")
+"""
 
 
 # %%
-def execute(episodes):
+def train(episodes):
     Random_history = train_random(episodes)
     # DQN_history = train_dqsn(episodes, sarsa = False)
     # PG_history = train_pg(episodes)
     # TDAC_history = train_ac(episodes)
-    # DDDQN_history = train_dddqn(episodes)
+    DDDQN_history = train_dddqn(episodes)
     
     return Random_history    
-    # return [Random_history, DQN_history, PG_history, TDAC_history, DDDQN_history]
+    # return [Random_history, DQN_history, PG_history, DDDQN_history] # TDAC_history
 
 
-print(execute(1))
+print(train(1))
 
 
 # %%
