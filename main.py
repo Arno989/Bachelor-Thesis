@@ -223,8 +223,8 @@ def train(episodes):
     Random_history = train_random(episodes)
     # DQN_history = train_dqsn(episodes, sarsa = False)
     # PG_history = train_pg(episodes)
-    # TDAC_history = train_ac(episodes)
-    DDDQN_history = train_dddqn(episodes)
+    TDAC_history = train_ac(episodes)
+    # DDDQN_history = train_dddqn(episodes)
     
     return Random_history    
     # return [Random_history, DQN_history, PG_history, DDDQN_history] # TDAC_history

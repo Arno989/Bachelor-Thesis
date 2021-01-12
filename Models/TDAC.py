@@ -31,19 +31,19 @@ class TDAC:
         values = Dense(1, activation='linear')(dense2)
 
         # actor loss function
-        # def custom_loss(y_true, y_pred):
-        #     out = K.clip(y_pred, 1e-8, 1-1e-8)
-        #     log_lik = y_true * K.log(out)
-
-        #     return K.sum(-log_lik * delta)
-        
         def custom_loss(y_true, y_pred):
-            action_true = y_true[:, :self.n_actions]
-            advantage = y_true[:, self.n_actions:]
+            out = K.clip(y_pred, 1e-8, 1-1e-8)
+            log_lik = y_true * K.log(out)
 
-            return -tf.math.log(y_pred.prob(action_true) + 1e-5) * advantage
-            # import tf.compat.v1 as tfc
-            return -tfc.log(y_pred.prob(action_true) + 1e-5) * advantage
+            return K.sum(-log_lik * delta)
+        
+        # def custom_loss(y_true, y_pred):
+        #     action_true = y_true[:, :self.n_actions]
+        #     advantage = y_true[:, self.n_actions:]
+
+        #     return -tf.math.log(y_pred.prob(action_true) + 1e-5) * advantage
+        #     # import tf.compat.v1 as tfc
+        #     return -tfc.log(y_pred.prob(action_true) + 1e-5) * advantage
 
         # compose networks
         actor = Model(inputs=[NN_input, delta], outputs=[probs])

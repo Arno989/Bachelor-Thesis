@@ -84,7 +84,7 @@ class Agent():
             return np.random.choice([i for i in range(self.action_space)])
 
         else:
-            actions = self.q_net.advantage((np.array([state])))
+            actions = self.q_net.advantage(np.array([state]))
             print(actions)
             action = np.argmax(actions)
             return action

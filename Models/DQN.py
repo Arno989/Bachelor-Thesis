@@ -52,6 +52,8 @@ class DQSN:
 
     #     _model = Model(_input, x)
     #     _model.compile(loss="mse", optimizer=Adam(lr=self.epsilon))
+    
+    # 
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
