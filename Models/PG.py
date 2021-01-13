@@ -1,4 +1,4 @@
-import os
+import os, csv
 import numpy as np
 
 import tensorflow as tf
@@ -110,3 +110,44 @@ class PG:
     def load_model(self):
         if os.path.isfile("./Models/.h5/PG.h5"):
             self.model = load_model("./Models/.h5/PG.h5")
+
+
+
+def train_pg(env, episodes):
+    hist_file = "./Data/Training Records/PG.csv"
+    
+    gamma = .90
+    lr_ml = 0.01
+    lr_dl = 0.01
+    
+    ep_history = []
+    agent = PG(gamma, lr_ml, lr_dl, env.action_space.n, env.observation_space.shape[0])
+    
+    for e in range(episodes):
+        state = np.asarray([i[1] for i in env.reset()])
+        done = False
+        score = [0,0]
+        
+        while not done:
+            action, prob = agent.compute_action(state)
+            next_state, reward, done, info = env.step(action)
+            next_state = np.asarray([i[1] for i in next_state])
+            
+            agent.remember(state, action, prob, reward)
+            state = next_state
+            if done:
+                agent.train_policy_network()
+            
+            score = [score[0] + reward, info["total_profit"]]
+                        
+        ep_history.append(score)
+        agent.save_model()
+        
+    try:
+        open(hist_file, 'x')
+    except:
+        pass
+    with open(hist_file, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        for r in ep_history:
+            writer.writerow(r)

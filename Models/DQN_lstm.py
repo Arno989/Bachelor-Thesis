@@ -1,11 +1,11 @@
-import os, random, csv
 from collections import deque
+import os, random, csv
 import numpy as np
 
 import tensorflow as tf
 from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.models import load_model
-from tensorflow.keras.layers import Dense, Dropout, Conv1D, Input
+from tensorflow.keras.layers import Dense, Dropout, Conv1D, Input, LSTM
 from tensorflow.keras.optimizers import Adam
 
 
@@ -25,14 +25,25 @@ class DQSN:
         self.model = self.build_model()
         self.target_model = self.build_model()
         self.sarsa = sarsa
-
+    
     def build_model(self):
-        model = Sequential()
-        model.add(Dense(30, input_dim=self.state_space, activation='relu'))
-        model.add(Dense(30, activation='relu'))
-        model.add(Dense(self.action_space, activation='linear'))
-        model.compile(loss='mse', optimizer=Adam(lr=self.lr))
-        return model
+        _model = Sequential()
+
+        _model.add(LSTM(units = 60, return_sequences = True, input_shape = (60,1,)))
+        _model.add(Dropout(0.3))
+        _model.add(LSTM(units = 60, return_sequences = True))
+        _model.add(Dropout(0.3))
+        _model.add(LSTM(units = 60, return_sequences = True))
+        _model.add(Dropout(0.3))
+        _model.add(LSTM(units = 60))
+        _model.add(Dropout(0.3))
+        _model.add(Dense(units = 60))
+        _model.add(Dropout(0.3))
+        _model.add(Dense(units = 20))
+        _model.add(Dense(units = self.action_space))
+
+        _model.compile(optimizer = 'adam', loss = 'mean_squared_error', metrics = ['accuracy'])
+        _model.summary()
     
 
     def remember(self, state, action, reward, next_state, done):
@@ -79,17 +90,17 @@ class DQSN:
             # print("  Target network updated")
             
     def save_model(self):
-        self.model.save("./Models/.h5/DQN.h5")
+        self.model.save("./Models/.h5/DQN-lstm.h5")
 
     def load_model(self):
-        if os.path.isfile("./Models/.h5/DQN.h5"):
-            self.model = load_model("./Models/.h5/DQN.h5")
+        if os.path.isfile("./Models/.h5/DQN-lstm.h5"):
+            self.model = load_model("./Models/.h5/DQN-lstm.h5")
             self.target_model.set_weights(self.model.get_weights())
 
 
 
-def train_dqsn(env, episodes, sarsa):
-    hist_file = "./Data/Training Records/DQN.csv"
+def train_dqsn_lstm(env, episodes, sarsa):
+    hist_file = "./Data/Training Records/DQN_lstm.csv"
     
     gamma = .95
     learning_rate = 0.01

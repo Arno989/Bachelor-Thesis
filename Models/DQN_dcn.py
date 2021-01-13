@@ -1,5 +1,5 @@
-import os, random, csv
 from collections import deque
+import os, random, csv
 import numpy as np
 
 import tensorflow as tf
@@ -22,17 +22,30 @@ class DQSN:
         self.fit_counter = 0
         self.action_space = action_space
         self.state_space = state_space
-        self.model = self.build_model()
-        self.target_model = self.build_model()
+        self.model, self.target_model = self.build_model()
         self.sarsa = sarsa
-
+    
     def build_model(self):
-        model = Sequential()
-        model.add(Dense(30, input_dim=self.state_space, activation='relu'))
-        model.add(Dense(30, activation='relu'))
-        model.add(Dense(self.action_space, activation='linear'))
-        model.compile(loss='mse', optimizer=Adam(lr=self.lr))
-        return model
+        _input = Input(shape = (60,1,))
+        
+        # Deconv segment, 1D convolution on 50 timesteps
+        x = Conv1D(60, 2, activation='relu', padding='causal')(_input)
+        x = Conv1D(40, 2, activation='relu', padding='causal')(x)
+        x = Conv1D(20, 2, activation='relu', padding='causal')(x)
+        # x = Conv1D(60, 2, activation='relu', padding='causal')(x)
+
+        # FF part
+        x = Dense(60, activation="relu")(x)
+        x = Dropout(0.5)(x)
+        x = Dense(60, activation="relu")(x)
+        x = Dropout(0.25)(x)
+        x = Dense(20, activation="relu")(x)
+        x = Dense(self.action_space, activation="softmax")(x)
+
+        _model = Model(_input, x)
+        _model.compile(loss="mse", optimizer=Adam(lr=self.epsilon))
+    
+        return _model, _model
     
 
     def remember(self, state, action, reward, next_state, done):
@@ -79,17 +92,17 @@ class DQSN:
             # print("  Target network updated")
             
     def save_model(self):
-        self.model.save("./Models/.h5/DQN.h5")
+        self.model.save("./Models/.h5/DQN-dcn.h5")
 
     def load_model(self):
-        if os.path.isfile("./Models/.h5/DQN.h5"):
-            self.model = load_model("./Models/.h5/DQN.h5")
+        if os.path.isfile("./Models/.h5/DQN-dcn.h5"):
+            self.model = load_model("./Models/.h5/DQN-dcn.h5")
             self.target_model.set_weights(self.model.get_weights())
 
 
 
-def train_dqsn(env, episodes, sarsa):
-    hist_file = "./Data/Training Records/DQN.csv"
+def train_dqsn_dcn(env, episodes, sarsa):
+    hist_file = "./Data/Training Records/DQN_dcn.csv"
     
     gamma = .95
     learning_rate = 0.01
@@ -103,6 +116,8 @@ def train_dqsn(env, episodes, sarsa):
     
     for e in range(episodes):
         state = np.asarray([i[1] for i in env.reset()])
+        # state = np.reshape(np.asarray([i[1] for i in env.reset()]),(64, 1, 60))
+        print(state.shape)
         done = False
         score = [0,0]
         
@@ -129,3 +144,7 @@ def train_dqsn(env, episodes, sarsa):
         writer = csv.writer(file)
         for r in ep_history:
             writer.writerow(r)
+
+
+
+

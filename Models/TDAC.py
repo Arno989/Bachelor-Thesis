@@ -1,4 +1,4 @@
-import os, random
+import os, random, csv
 import numpy as np
 
 import tensorflow as tf
@@ -37,14 +37,6 @@ class TDAC:
 
             return K.sum(-log_lik * delta)
         
-        # def custom_loss(y_true, y_pred):
-        #     action_true = y_true[:, :self.n_actions]
-        #     advantage = y_true[:, self.n_actions:]
-
-        #     return -tf.math.log(y_pred.prob(action_true) + 1e-5) * advantage
-        #     # import tf.compat.v1 as tfc
-        #     return -tfc.log(y_pred.prob(action_true) + 1e-5) * advantage
-
         # compose networks
         actor = Model(inputs=[NN_input, delta], outputs=[probs])
         actor.compile(optimizer=Adam(lr=self.alpha), loss=custom_loss)
@@ -94,3 +86,41 @@ class TDAC:
             self.actor = load_model("./Models/.h5/TDAC-actor.h5")
             self.critic = load_model("./Models/.h5/TDAC-critic.h5")
             self.policy = load_model("./Models/.h5/TDAC-policy.h5")
+
+
+
+def train_ac(env, episodes):
+    hist_file = "./Data/Training Records/TDAC.csv"
+    
+    alpha = 0.00001
+    beta = 0.00005
+    
+    ep_history = []
+    agent = TDAC(alpha, beta, action_space= env.action_space.n, state_space=env.observation_space.shape[0])
+
+    for e in range(episodes):
+        state = np.asarray([i[1] for i in env.reset()])
+        done = False
+        score = [0,0]
+        
+        while not done:
+            action = agent.choose_action(state)
+            next_state, reward, done, info = env.step(action)
+            next_state = np.asarray([i[1] for i in next_state])
+            
+            agent.learn(state, action, reward, next_state, done)
+            state = next_state
+            
+            score = [score[0] + reward, info["total_profit"]]
+
+        ep_history.append(score)
+        agent.save_model()
+    
+    try:
+        open(hist_file, 'x')
+    except:
+        pass
+    with open(hist_file, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        for r in ep_history:
+            writer.writerow(r)

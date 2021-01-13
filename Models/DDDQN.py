@@ -1,4 +1,4 @@
-import os
+import os, csv
 
 import tensorflow as tf 
 import numpy as np 
@@ -125,3 +125,43 @@ class Agent():
         if os.path.isfile("./Models/.h5/DDDQN-Q_net.h5"):
             self.q_net = load_model("./Models/.h5/DDDQN-Q_net.h5")
             self.target_net = load_model("./Models/.h5/DDDQN-target.h5")
+
+
+
+def train_dddqn(env, episodes):
+    hist_file = "./Data/Training Records/DDDQN.csv"
+    
+    gamma = .99
+    replace = 100
+    lr = 0.001
+    
+    ep_history = []
+    agent = Agent(action_space=env.action_space.n, state_space=env.observation_space.shape[0])
+
+    for e in range(episodes):
+        state = np.asarray([i[1] for i in env.reset()])
+        done = False
+        score = [0,0]
+        
+        while not done:
+            action = agent.act(state)
+            next_state, reward, done, info = env.step(action)
+            next_state = np.asarray([i[1] for i in next_state])
+            
+            agent.update_mem(state, action, reward, next_state, done)
+            agent.train()
+            state = next_state
+            
+            score = [score[0] + reward, info["total_profit"]]
+
+        ep_history.append(score)
+        agent.save_model()
+        
+    try:
+        open(hist_file, 'x')
+    except:
+        pass
+    with open(hist_file, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        for r in ep_history:
+            writer.writerow(r)

@@ -1,18 +1,20 @@
 #%%
 import gym, gym_anytrading
-import os, time, random, datetime
+import os, time, random, datetime, csv
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import tensorflow as tf
 
-from Models.Random import Random
-from Models.DQN import DQSN
-from Models.PG import PG
-from Models.TDAC import TDAC
-from Models.DDDQN import Agent
+from Models.Random import train_random
+from Models.DQN import train_dqsn
+from Models.PG import train_pg
+from Models.TDAC import train_ac
+from Models.DDDQN import train_dddqn
+from Models.DQN_dcn import train_dqsn_dcn
+from Models.DQN_lstm import train_dqsn_lstm
 
-
+# Configure GPU memory growth and eager execution for agents
 try:
     tf.compat.v1.disable_eager_execution()
     tf.config.experimental.set_memory_growth(tf.config.list_physical_devices('GPU')[0], True)
@@ -20,7 +22,6 @@ try:
 except Exception as e:
     print("No GPU's detected\n",e)
 
-figsize = (100,10)
 
 ### Environment setup -------------------------------------------------------------------------------------------------
 
@@ -42,195 +43,14 @@ env = gym.make('stocks-v0', df = df, window_size = window_size, frame_bound = (s
 print(f"Actions: {env.action_space.n}, Observation space: {env.observation_space.shape[0]}")
 
 
+#%%
 
-### Agent training functions -----------------------------------------------------------------------------------------------
+episodes = 1
 
-def train_random(episodes):
-    ep_history = [] # reward, profit
-    agent = Random(action_space=env.action_space.n, state_space=env.observation_space.shape[0])
-    
-    for e in range(episodes):
-        state = np.asarray([i[1] for i in env.reset()])
-        done = False
-        score = [0,0]
-        
-        while not done:
-            action = agent.act(state)
-            next_state, reward, done, info = env.step(action)
-            next_state = np.asarray([i[1] for i in next_state])
-            
-            state = next_state
-            
-            score = [score[0] + reward, info["total_profit"]]
-            
-                        
-        ep_history.append(score)
-        
-    plt.figure(figsize=figsize)
-    env.render_all()
-    plt.show()
-    return ep_history
+# train_random(env, episodes)
+# train_pg(env, episodes)
+# train_ac(env, episodes)
+# train_dqsn(env, episodes, sarsa = False)
+# train_dqsn_dcn(env, episodes, sarsa = False)
+train_dqsn_lstm(env, episodes, sarsa = False)
 
-
-def train_dqsn(episodes, sarsa):
-    gamma = .95
-    learning_rate = 0.01
-    epsilon = 1
-    epsilon_min = 0.01
-    epsilon_decay = .995    
-    
-    ep_history = [] # reward, profit
-    agent = DQSN(epsilon, gamma, epsilon_min, learning_rate, epsilon_decay, action_space=env.action_space.n, state_space=env.observation_space.shape[0], sarsa=sarsa)
-    agent.load_model()
-    
-    for e in range(episodes):
-        state = np.asarray([i[1] for i in env.reset()])
-        done = False
-        score = [0,0]
-        
-        while not done:
-            action = agent.act(state)
-            next_state, reward, done, info = env.step(action)
-            next_state = np.asarray([i[1] for i in next_state])
-            
-            agent.remember(state, action, reward, next_state, done)
-            state = next_state
-            agent.replay()
-            
-            score = [score[0] + reward, info["total_profit"]]
-            
-                        
-        ep_history.append(score)
-        agent.save_model()
-        
-    plt.figure(figsize=figsize)
-    env.render_all()
-    plt.show()
-    return ep_history
-
-
-def train_pg(episodes):
-    gamma = .90
-    lr_ml = 0.01
-    lr_dl = 0.01
-    
-    ep_history = []
-    agent = PG(gamma, lr_ml, lr_dl, env.action_space.n, env.observation_space.shape[0])
-    
-    for e in range(episodes):
-        state = np.asarray([i[1] for i in env.reset()])
-        done = False
-        score = [0,0]
-        
-        while not done:
-            action, prob = agent.compute_action(state)
-            next_state, reward, done, info = env.step(action)
-            next_state = np.asarray([i[1] for i in next_state])
-            
-            agent.remember(state, action, prob, reward)
-            state = next_state
-            if done:
-                agent.train_policy_network()
-            
-            score = [score[0] + reward, info["total_profit"]]
-                        
-        ep_history.append(score)
-        agent.save_model()
-         
-    plt.figure(figsize=figsize)
-    env.render_all()
-    plt.show()
-    return ep_history
-
-
-def train_ac(episodes):
-    alpha = 0.00001
-    beta = 0.00005
-    
-    ep_history = []
-    agent = TDAC(alpha, beta, action_space= env.action_space.n, state_space=env.observation_space.shape[0])
-
-    for e in range(episodes):
-        state = np.asarray([i[1] for i in env.reset()])
-        done = False
-        score = [0,0]
-        
-        while not done:
-            action = agent.choose_action(state)
-            next_state, reward, done, info = env.step(action)
-            next_state = np.asarray([i[1] for i in next_state])
-            
-            agent.learn(state, action, reward, next_state, done)
-            state = next_state
-            
-            score = [score[0] + reward, info["total_profit"]]
-
-        ep_history.append(score)
-        agent.save_model()
-    
-    plt.figure(figsize=figsize)
-    env.render_all()
-    plt.show()
-    return ep_history
-
-
-def train_dddqn(episodes):
-    gamma = .99
-    replace = 100
-    lr = 0.001
-    
-    ep_history = []
-    agent = Agent(action_space=env.action_space.n, state_space=env.observation_space.shape[0])
-
-    for e in range(episodes):
-        state = np.asarray([i[1] for i in env.reset()])
-        done = False
-        score = [0,0]
-        
-        while not done:
-            action = agent.act(state)
-            next_state, reward, done, info = env.step(action)
-            next_state = np.asarray([i[1] for i in next_state])
-            
-            agent.update_mem(state, action, reward, next_state, done)
-            agent.train()
-            state = next_state
-            
-            score = [score[0] + reward, info["total_profit"]]
-
-        ep_history.append(score)
-        agent.save_model()
-    
-    plt.figure(figsize=figsize)
-    env.render_all()
-    plt.show()
-    return ep_history
-
-"""
-    def save_model(self):
-        self.q_net.save("./.h5/DDDQN-Q_net.h5")
-        self.target_net.save("./.h5/DDDQN-target.h5")
-
-    def load_model(self):
-        if os.path.isfile("./.h5/DDDQN-Q_net.h5"):
-            self.q_net = load_model("./.h5/DDDQN-Q_net.h5")
-            self.target_net = load_model("./.h5/DDDQN-target.h5")
-"""
-
-
-# %%
-def train(episodes):
-    Random_history = train_random(episodes)
-    # DQN_history = train_dqsn(episodes, sarsa = False)
-    # PG_history = train_pg(episodes)
-    TDAC_history = train_ac(episodes)
-    # DDDQN_history = train_dddqn(episodes)
-    
-    return Random_history    
-    # return [Random_history, DQN_history, PG_history, DDDQN_history] # TDAC_history
-
-
-print(train(1))
-
-
-# %%
