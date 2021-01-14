@@ -5,7 +5,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.models import load_model
-from tensorflow.keras.layers import Dense, Dropout, Conv1D, Input, LSTM
+from tensorflow.keras.layers import Dense, Dropout, Conv1D, Input, LSTM, Bidirectional
+from tensorflow.compat.v1.keras.layers import CuDNNLSTM
 from tensorflow.keras.optimizers import Adam
 
 
@@ -22,35 +23,34 @@ class DQSN:
         self.fit_counter = 0
         self.action_space = action_space
         self.state_space = state_space
-        self.model = self.build_model()
-        self.target_model = self.build_model()
+        self.model, self.target_model = self.build_model()
         self.sarsa = sarsa
     
     def build_model(self):
         _model = Sequential()
 
-        _model.add(LSTM(units = 60, return_sequences = True, input_shape = (60,1,)))
+        _model.add(Bidirectional(CuDNNLSTM(units = 60, return_sequences = True, input_shape = (60,1,))))
         _model.add(Dropout(0.3))
-        _model.add(LSTM(units = 60, return_sequences = True))
+        _model.add(Bidirectional(CuDNNLSTM(units = 50, return_sequences = True)))
         _model.add(Dropout(0.3))
-        _model.add(LSTM(units = 60, return_sequences = True))
+        _model.add(Bidirectional(CuDNNLSTM(units = 40, return_sequences = True)))
         _model.add(Dropout(0.3))
-        _model.add(LSTM(units = 60))
+        _model.add(Bidirectional(CuDNNLSTM(units = 30)))
         _model.add(Dropout(0.3))
-        _model.add(Dense(units = 60))
+        _model.add(Dense(units = 30))
         _model.add(Dropout(0.3))
-        _model.add(Dense(units = 20))
+        _model.add(Dense(units = 15))
         _model.add(Dense(units = self.action_space))
 
         _model.compile(optimizer = 'adam', loss = 'mean_squared_error', metrics = ['accuracy'])
-        _model.summary()
+        return _model, _model
     
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
 
     def act(self, state):
-        state = state.reshape([1, state.shape[0]])
+        state = state.reshape([1, state.shape[0], 1])
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.action_space)
         act_values = self.target_model.predict(state)
@@ -67,8 +67,10 @@ class DQSN:
         next_states = np.array([i[3] for i in minibatch])
         dones = np.array([i[4] for i in minibatch])
 
-        states = np.squeeze(states)
-        next_states = np.squeeze(next_states)
+        # states = np.squeeze(states)
+        # next_states = np.squeeze(next_states)
+        states = np.resize(states, (states.shape[0],states.shape[1],1))
+        next_states = np.resize(next_states, (next_states.shape[0],next_states.shape[1],1))
 
         if self.sarsa:
             targets = rewards + self.gamma * (self.model.predict_on_batch(next_states).shape[0]) * (1-dones)
@@ -95,7 +97,7 @@ class DQSN:
     def load_model(self):
         if os.path.isfile("./Models/.h5/DQN-lstm.h5"):
             self.model = load_model("./Models/.h5/DQN-lstm.h5")
-            self.target_model.set_weights(self.model.get_weights())
+            # self.target_model.set_weights(self.model.get_weights())
 
 
 
