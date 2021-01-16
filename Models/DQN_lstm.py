@@ -98,7 +98,6 @@ class DQSN:
         if os.path.isfile("./Models/.h5/DQN-lstm.h5"):
             self.model = load_model("./Models/.h5/DQN-lstm.h5")
             self.target_model = load_model("./Models/.h5/DQN-lstm.h5")
-            # self.target_model.set_weights(self.model.get_weights())
 
 
 

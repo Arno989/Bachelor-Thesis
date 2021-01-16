@@ -143,11 +143,10 @@ def train_pg(env, episodes):
         ep_history.append(score)
         agent.save_model()
         
-    try:
-        open(hist_file, 'x')
-    except:
-        pass
-    with open(hist_file, mode='a', newline='') as file:
-        writer = csv.writer(file)
-        for r in ep_history:
-            writer.writerow(r)
+        try:
+            open(hist_file, 'x')
+        except:
+            pass
+        with open(hist_file, mode='a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(score)

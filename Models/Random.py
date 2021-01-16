@@ -33,11 +33,10 @@ def train_random(env, episodes):
             
         ep_history.append(score)
         
-    try:
-        open(hist_file, 'x')
-    except:
-        pass
-    with open(hist_file, mode='a', newline='') as file:
-        writer = csv.writer(file)
-        for r in ep_history:
-            writer.writerow(r)
+        try:
+            open(hist_file, 'x')
+        except:
+            pass
+        with open(hist_file, mode='a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(score)

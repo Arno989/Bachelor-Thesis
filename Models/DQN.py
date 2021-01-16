@@ -84,7 +84,7 @@ class DQSN:
     def load_model(self):
         if os.path.isfile("./Models/.h5/DQN.h5"):
             self.model = load_model("./Models/.h5/DQN.h5")
-            self.target_model.set_weights(self.model.get_weights())
+            self.target_model = load_model("./Models/.h5/DQN.h5")
 
 
 
@@ -121,11 +121,10 @@ def train_dqsn(env, episodes, sarsa):
         ep_history.append(score)
         agent.save_model()
         
-    try:
-        open(hist_file, 'x')
-    except:
-        pass
-    with open(hist_file, mode='a', newline='') as file:
-        writer = csv.writer(file)
-        for r in ep_history:
-            writer.writerow(r)
+        try:
+            open(hist_file, 'x')
+        except:
+            pass
+        with open(hist_file, mode='a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(score)
