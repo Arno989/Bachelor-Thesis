@@ -135,7 +135,10 @@ def train_dqsn_lstm(env, episodes, sarsa):
         ep_history.append(score)
         agent.save_model()
         
-        open(hist_file, 'x')
+        try:
+            open(hist_file, 'x')
+        except:
+            pass
         with open(hist_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(score)
