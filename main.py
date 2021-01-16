@@ -45,14 +45,15 @@ print(f"Actions: {env.action_space.n}, Observation space: {env.observation_space
 
 #%%
 
-episodes = 10
+episodes = 5
 
 # train_random(env, episodes)
 # train_pg(env, episodes)
 # train_ac(env, episodes)
 # train_dqsn(env, episodes, sarsa = False)
 # train_dqsn_dcn(env, episodes, sarsa = False)
-train_dqsn_lstm(env, episodes, sarsa = False)
+for i in range(78):
+    train_dqsn_lstm(env, episodes, sarsa = False)
 
 
 # %%
