@@ -51,8 +51,8 @@ episodes = 500
 # train_pg(env, episodes)
 # train_ac(env, episodes)
 # train_dqsn(env, episodes, sarsa = False)
-# train_dqsn_dcn(env, episodes, sarsa = False)
-train_dqsn_lstm(env, episodes, sarsa = False)
+train_dqsn_dcn(env, episodes, sarsa = False)
+# train_dqsn_lstm(env, episodes, sarsa = False)
 
 
 # %%

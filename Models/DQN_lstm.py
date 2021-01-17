@@ -67,8 +67,6 @@ class DQSN:
         next_states = np.array([i[3] for i in minibatch])
         dones = np.array([i[4] for i in minibatch])
 
-        # states = np.squeeze(states)
-        # next_states = np.squeeze(next_states)
         states = np.resize(states, (states.shape[0],states.shape[1],1))
         next_states = np.resize(next_states, (next_states.shape[0],next_states.shape[1],1))
 
