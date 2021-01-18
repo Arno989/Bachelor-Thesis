@@ -3,7 +3,10 @@ import matplotlib.pyplot as plt
 import os, csv
 import numpy as np
 import pandas as pd
-plt.style.use("seaborn-bright") # fivethirtyeight, classic, bmh
+import matplotlib.style as style
+# print(style.available)
+
+style.use("seaborn-bright") # fivethirtyeight, classic, bmh, seaborn-bright
 
 reward_data = {}
 profit_data = {}
@@ -13,7 +16,7 @@ for i, hist_file in enumerate(os.listdir("./Records")):
     with open(os.path.join("./Records", hist_file), mode='r', newline='') as file:
         reader = csv.reader(file)
         for i, r in enumerate(reader):
-            if i <= 208:
+            if i < 209:
                 reward_data[hist_file].append(float(r[0]))
                 profit_data[hist_file].append(float(r[1]))
             else:
