@@ -52,7 +52,7 @@ class DQSN:
         self.memory.append((state, action, reward, next_state, done))
 
     def act(self, state):
-        state = state.reshape([1, state.shape[0]])
+        state = state.reshape([1, state.shape[0], 1])
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.action_space)
         act_values = self.target_model.predict(state)
@@ -69,8 +69,8 @@ class DQSN:
         next_states = np.array([i[3] for i in minibatch])
         dones = np.array([i[4] for i in minibatch])
 
-        states = np.squeeze(states)
-        next_states = np.squeeze(next_states)
+        states = np.resize(states, (states.shape[0],states.shape[1],1))
+        next_states = np.resize(next_states, (next_states.shape[0],next_states.shape[1],1))
 
         if self.sarsa:
             targets = rewards + self.gamma * (self.model.predict_on_batch(next_states).shape[0]) * (1-dones)
@@ -116,8 +116,6 @@ def train_dqsn_dcn(env, episodes, sarsa):
     
     for e in range(episodes):
         state = np.asarray([i[1] for i in env.reset()])
-        # state = np.reshape(np.asarray([i[1] for i in env.reset()]),(64, 1, 60))
-        print(state.shape)
         done = False
         score = [0,0]
         
@@ -143,7 +141,3 @@ def train_dqsn_dcn(env, episodes, sarsa):
         with open(hist_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(score)
-
-
-
-

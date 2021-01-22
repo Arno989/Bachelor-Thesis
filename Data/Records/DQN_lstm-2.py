@@ -6,12 +6,14 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.models import load_model
 from tensorflow.keras.layers import Dense, Dropout, Conv1D, Input, LSTM, Bidirectional
+from tensorflow.python.keras import activations
+from tensorflow.python.keras.backend import relu
 from tensorflow.compat.v1.keras.layers import CuDNNLSTM
 from tensorflow.keras.optimizers import Adam
 
 
 class DQSN:
-    def __init__(self, epsilon, gamma, epsilon_min, lr, epsilon_decay,  action_space, state_space, batch_size = 64, copy_interval = 1, sarsa = False):
+    def __init__(self, epsilon, gamma, epsilon_min, lr, epsilon_decay,  action_space, state_space, batch_size = 128, copy_interval = 1, sarsa = False):
         self.epsilon = epsilon
         self.gamma = gamma
         self.batch_size = batch_size
@@ -31,18 +33,14 @@ class DQSN:
 
         _model.add(Bidirectional(CuDNNLSTM(units = 60, return_sequences = True, input_shape = (60,1,))))
         _model.add(Dropout(0.3))
-        _model.add(Bidirectional(CuDNNLSTM(units = 50, return_sequences = True)))
-        _model.add(Dropout(0.3))
-        _model.add(Bidirectional(CuDNNLSTM(units = 40, return_sequences = True)))
-        _model.add(Dropout(0.3))
         _model.add(Bidirectional(CuDNNLSTM(units = 30)))
         _model.add(Dropout(0.3))
-        _model.add(Dense(units = 30))
+        _model.add(Dense(units = 30, activation=relu))
         _model.add(Dropout(0.3))
-        _model.add(Dense(units = 15))
-        _model.add(Dense(units = self.action_space))
+        _model.add(Dense(units = 15, activation=relu))
+        _model.add(Dense(units = self.action_space, activation=activations.linear))
 
-        _model.compile(optimizer = 'adam', loss = 'mean_squared_error', metrics = ['accuracy'])
+        _model.compile(optimizer = 'adam', loss = 'mean_squared_error')
         return _model, _model
     
 
