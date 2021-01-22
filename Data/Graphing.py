@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.style as style
 print(style.available)
 
-style.use("seaborn-bright") # fivethirtyeight, classic, bmh, seaborn-bright
+style.use("seaborn-white") # fivethirtyeight, classic, bmh, seaborn-bright
 
 reward_data = {}
 profit_data = {}
