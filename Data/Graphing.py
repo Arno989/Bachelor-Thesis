@@ -4,7 +4,7 @@ import os, csv
 import numpy as np
 import pandas as pd
 import matplotlib.style as style
-# print(style.available)
+print(style.available)
 
 style.use("seaborn-bright") # fivethirtyeight, classic, bmh, seaborn-bright
 
@@ -16,14 +16,16 @@ for i, hist_file in enumerate(os.listdir("./Records")):
     with open(os.path.join("./Records", hist_file), mode='r', newline='') as file:
         reader = csv.reader(file)
         for i, r in enumerate(reader):
-            if i < 209:
+            if i < 500:
                 reward_data[hist_file].append(float(r[0]))
                 profit_data[hist_file].append(float(r[1]))
             else:
                 break
             
-reward_data = pd.DataFrame(reward_data)
-profit_data = pd.DataFrame(profit_data)
+reward_data = pd.DataFrame.from_dict(reward_data, orient='index')
+reward_data = reward_data.transpose()
+profit_data = pd.DataFrame.from_dict(profit_data, orient='index')
+profit_data = profit_data.transpose()
             
 # %%
 plt.figure(figsize=(20,10))
