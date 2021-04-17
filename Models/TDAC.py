@@ -1,6 +1,8 @@
 import os, random, csv
 import numpy as np
 
+from dataloader import env_initialiser
+
 import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras import Model
@@ -89,7 +91,8 @@ class TDAC:
 
 
 
-def train_ac(env, episodes):
+def train_ac(episodes):
+    env = env_initialiser().init()
     hist_file = "./Data/Training Records/TDAC.csv"
     
     alpha = 0.00001
@@ -99,6 +102,8 @@ def train_ac(env, episodes):
     agent = TDAC(alpha, beta, action_space= env.action_space.n, state_space=env.observation_space.shape[0])
 
     for e in range(episodes):
+        env = env_initialiser().init()
+        max_profit = env.max_possible_profit()
         state = np.asarray([i[1] for i in env.reset()])
         done = False
         score = [0,0]
@@ -113,6 +118,7 @@ def train_ac(env, episodes):
             
             score = [score[0] + reward, info["total_profit"]]
 
+        score.append((score[1]/max_profit)*100)
         score.append(env.max_possible_profit())
         ep_history.append(score)
         agent.save_model()
@@ -124,4 +130,3 @@ def train_ac(env, episodes):
         with open(hist_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(score)
-    print(np.asarray(ep_history))

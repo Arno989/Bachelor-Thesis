@@ -31,9 +31,19 @@ df["Timestamp"] = pd.to_datetime(df["Timestamp"])
 
 # indexer = np.random.randint(0, len(df[df["Timestamp"] <= df["Timestamp"].max()-datetime.timedelta(days=data_len)]))
 # df = df[df["Timestamp"] <= (df.iloc[indexer]["Timestamp"] + datetime.timedelta(days=data_len))][indexer:]
+# print(df.iloc[0], df.iloc[2000])
+# print(len(df))
 
+indexer = np.random.randint(0, len(df[df["Timestamp"] <= df["Timestamp"].max()-datetime.timedelta(days=data_len)]))
+# print(indexer)
+first_timestamp = df.iloc[indexer]["Timestamp"]
+last_timestamp = df[df["Timestamp"] >= (df.iloc[indexer]["Timestamp"] + datetime.timedelta(days=data_len))].iloc[0]["Timestamp"]
+# print(first_timestamp, last_timestamp)
 
-df = df[(df["Timestamp"] >= df["Timestamp"].max()-datetime.timedelta(days=data_len)) & (df["Timestamp"] <= df["Timestamp"].max())]
+df = df[(df["Timestamp"] >= first_timestamp) & (df["Timestamp"] <= last_timestamp)]
+print(len(df))
+
+# df = df[(df["Timestamp"] >= df["Timestamp"].max()-datetime.timedelta(days=data_len)) & (df["Timestamp"] <= df["Timestamp"].max())]
 
 # step size = 60 minutes (make prediction every hour)
 window_size = 60
@@ -41,7 +51,7 @@ start_index = window_size
 end_index = len(df)
 
 env = gym.make('stocks-v0', df = df, window_size = window_size, frame_bound = (start_index, end_index))
-print(f"Actions: {env.action_space.n}, Observation space: {env.observation_space.shape[0]}")
+# print(f"Actions: {env.action_space.n}, Observation space: {env.observation_space.shape[0]}")
 
 
 #%%

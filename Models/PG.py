@@ -1,6 +1,8 @@
 import os, csv
 import numpy as np
 
+from dataloader import env_initialiser
+
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.models import Model, load_model
@@ -113,7 +115,8 @@ class PG:
 
 
 
-def train_pg(env, episodes):
+def train_pg(episodes):
+    env = env_initialiser().init()
     hist_file = "./Data/Training Records/PG.csv"
     
     gamma = .90
@@ -124,6 +127,8 @@ def train_pg(env, episodes):
     agent = PG(gamma, lr_ml, lr_dl, env.action_space.n, env.observation_space.shape[0])
     
     for e in range(episodes):
+        env = env_initialiser().init()
+        max_profit = env.max_possible_profit()
         state = np.asarray([i[1] for i in env.reset()])
         done = False
         score = [0,0]
@@ -140,6 +145,8 @@ def train_pg(env, episodes):
             
             score = [score[0] + reward, info["total_profit"]]
                         
+        score.append((score[1]/max_profit)*100)
+        score.append(env.max_possible_profit())
         ep_history.append(score)
         agent.save_model()
         

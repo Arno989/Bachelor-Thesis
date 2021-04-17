@@ -2,6 +2,8 @@ from collections import deque
 import os, random, csv
 import numpy as np
 
+from dataloader import env_initialiser
+
 import tensorflow as tf
 from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.models import load_model
@@ -99,7 +101,8 @@ class DQSN:
 
 
 
-def train_dqsn_lstm(env, episodes, sarsa):
+def train_dqsn_lstm(episodes, sarsa):
+    env = env_initialiser().init()
     hist_file = "./Data/Training Records/DQN_lstm.csv"
     
     gamma = .95
@@ -113,6 +116,8 @@ def train_dqsn_lstm(env, episodes, sarsa):
     agent.load_model()
     
     for e in range(episodes):
+        env = env_initialiser().init()
+        max_profit = env.max_possible_profit()
         state = np.asarray([i[1] for i in env.reset()])
         done = False
         score = [0,0]
@@ -128,7 +133,8 @@ def train_dqsn_lstm(env, episodes, sarsa):
             
             score = [score[0] + reward, info["total_profit"]]
             
-                        
+        score.append((score[1]/max_profit)*100)
+        score.append(env.max_possible_profit())
         ep_history.append(score)
         agent.save_model()
         

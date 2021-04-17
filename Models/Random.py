@@ -11,10 +11,6 @@ class Random:
     def act(self, state):
         return np.random.choice(np.arange(self.action_space))
 
-## TODO
-# make per episode env reset
-# change data to relative score against max profit
-# randomise start date in data
 
 def train_random(episodes):
     env = env_initialiser().init()

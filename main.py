@@ -18,30 +18,33 @@ except Exception as e:
 
 
 #%%
-episodes = 500
+
+##TODO
+# uniformise datetime slicing in data loader, OR timedelte OR amount of datapoints (considering market close at night), perhaps timedelta is better
+
+episodes = 1500
 
 start = time.time()
 train_random(episodes)
 end = time.time()
 print(f"random: {(end-start)/episodes}")
 # start = time.time()
-# train_pg(env, episodes)
+# train_pg(episodes)
 # end = time.time()
 # print(f"PG: {(end-start)/episodes}")
 # start = time.time()
-# train_ac(env, episodes)
+# train_ac(episodes)
 # end = time.time()
 # print(f"AC: {(end-start)/episodes}")
 # start = time.time()
-# train_dqsn(env, episodes, sarsa = False)
+# train_dqsn(episodes, sarsa = False)
 # end = time.time()
 # print(f"DQN: {(end-start)/episodes}")
 # start = time.time()
-# # train_dqsn_dcn(env, episodes, sarsa = False)
-# train_dqsn_lstm(env, episodes, sarsa = False)
+# train_dqsn_lstm(episodes, sarsa = False)
 # end = time.time()
 # print(f"DQN_LSTM: {(end-start)/episodes}")
-# start = time.time()
+
 
 
 # %%
