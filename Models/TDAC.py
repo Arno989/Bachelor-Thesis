@@ -113,6 +113,7 @@ def train_ac(env, episodes):
             
             score = [score[0] + reward, info["total_profit"]]
 
+        score.append(env.max_possible_profit())
         ep_history.append(score)
         agent.save_model()
     
@@ -123,3 +124,4 @@ def train_ac(env, episodes):
         with open(hist_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(score)
+    print(np.asarray(ep_history))

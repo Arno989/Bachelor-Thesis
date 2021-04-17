@@ -1,6 +1,7 @@
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
+from dataloader import env_initialiser
 
 class Random:
     def __init__(self, action_space, state_space):
@@ -10,14 +11,20 @@ class Random:
     def act(self, state):
         return np.random.choice(np.arange(self.action_space))
 
+## TODO
+# make per episode env reset
+# change data to relative score against max profit
+# randomise start date in data
 
-
-def train_random(env, episodes):
+def train_random(episodes):
+    env = env_initialiser().init()
     hist_file = "./Data/Training Records/Random.csv"
-    ep_history = [] # [reward, profit]
+    ep_history = [] # [reward, profit, (profit/max_profit)*100, max_profit]
     agent = Random(action_space=env.action_space.n, state_space=env.observation_space.shape[0])
     
     for e in range(episodes):
+        env = env_initialiser().init()
+        max_profit = env.max_possible_profit()
         state = np.asarray([i[1] for i in env.reset()])
         done = False
         score = [0,0]
@@ -31,6 +38,8 @@ def train_random(env, episodes):
             
             score = [score[0] + reward, info["total_profit"]]
             
+        score.append((score[1]/max_profit)*100)
+        score.append(env.max_possible_profit())
         ep_history.append(score)
         
         try:
