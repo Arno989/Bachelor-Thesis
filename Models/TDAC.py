@@ -1,4 +1,4 @@
-import os, random, csv
+import os, csv, time, math
 import numpy as np
 
 from dataloader import env_initialiser
@@ -100,13 +100,19 @@ def train_ac(episodes):
     
     ep_history = []
     agent = TDAC(alpha, beta, action_space= env.action_space.n, state_space=env.observation_space.shape[0])
+    
+    run_start = time.time()
+    timings = []
 
     for e in range(episodes):
+        ep_start_time = time.time()
+        
         env = env_initialiser().init()
         max_profit = env.max_possible_profit()
         state = np.asarray([i[1] for i in env.reset()])
         done = False
         score = [0,0]
+        print(f'\rEpisode: {e}/{episodes}', end='', flush=True)
         
         while not done:
             action = agent.choose_action(state)
@@ -130,3 +136,10 @@ def train_ac(episodes):
         with open(hist_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(score)
+        
+        timings.append(time.time()-ep_start_time)
+        avg_time = sum(timings)/len(timings)
+        m, s = divmod(math.floor(avg_time*(episodes-e)), 60)
+        h, m = divmod(m, 60)
+        
+        print(f'\rEpisode: {e}/{episodes}, Time estimate: {math.floor(time.time() - run_start)}s/{math.floor(avg_time*500)}s => {h:d}:{m:02d}:{s:02d}.', end='', flush=True)

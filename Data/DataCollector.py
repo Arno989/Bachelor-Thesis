@@ -1,9 +1,12 @@
-import csv, io, json, os, requests
+import csv, os, requests, sys, getopt
 import pandas as pd
 from datetime import datetime
 from DataPoint import DataPoint
-import matplotlib.pyplot as plt
 from time import sleep
+
+## TODO
+# Parametrise script with options to run symbols and stuff
+# https://www.tutorialspoint.com/python/python_command_line_arguments.htm
 
 testKeys = ["TSLA", "IBM", "AMD", "NVDA", "AAPL", "MSFT"]
 largeCap = ["AAPL", "AMZN", "MSFT", "GOOG", "GOOGL", "BABA", "FB", "BR", "V", "TSM", "TSLA", "WMT", "JNJ", "PG", "MA", "NVDA", "HD", "JPM", "UNH", "VZ", "ADBE", "DIS", "PYPL", "CRM", "INTC", "NFLX", "CMCSA", "KO", "MRK", "BAC", "PFE", "T", "NKE", "NVS", "PEP", "TM", "ABT", "ORCL", "SAP", "TMO", "CSCO", "MCD", "COST", "ABBV", "ASML", "XOM", "DHR", "AVGO", "UPS", "AMGN", "LLY", "ACN", "TMUS", "MDT", "NEE", "ZM", "CVX", "UNP", "BMY", "CHL", "QCOM", "TXN", "CHTR", "SNY", "LIN", "NVO", "LOW", "PM", "SHOP", "HON", "LMT", "IBM", "AMT", "RY", "SBUX", "JD", "WFC", "SNE", "GSK", "BA", "AMD", "MMM", "NOW", "FIS", "C", "HDB", "BUD", "UN", "TOT", "SPGI", "INTU", "BLK", "TD", "DCUE", "BTI", "MDLZ", "ISRGD"]
@@ -85,7 +88,7 @@ def getLastRecord(symbol: str):
         print(f"[{symbol}]\tData found, latest record at {data.iloc[-1]['timestamp']}")
         return datetime.strptime(data.iloc[-1]["timestamp"], "%Y-%m-%d %H:%M:%S").timestamp()
     else:
-        print(f"[{symbol}]\tNo data found")
+        print(f"[{symbol}]\tNo data found in local records")
         return None
 
 
@@ -119,7 +122,7 @@ def getDataSet(symbol:str, startTime=None, endTime=None):
         print(f"{len(rDataPoints)} datapoints recieved")
         writeDataSet(rDataPoints)
     else:
-        print('No data found')
+        print('No data recieved from fetch')
     return rDataPoints
     
 
@@ -165,4 +168,4 @@ def iterateSymbols(symbols: list):
     for symbol in symbols:
         getAllSymbolData(symbol)
 
-iterateSymbols(testKeys)
+iterateSymbols(largeCap)
